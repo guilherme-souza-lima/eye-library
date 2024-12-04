@@ -10,54 +10,65 @@ func CreatePackage(packageName string) error {
 
 	files := map[string]string{
 		"handler.go": fmt.Sprintf(`package %s
+import (
+	"github.com/labstack/echo/v4"
+	"net/http"
+)
 
 // Handler for the %s package
 type Handler struct {
-	ServiceInterface ServiceInterface
+	s ServiceInterface
 }
 
 func NewHandler(s ServiceInterface) *Handler {
 	return &Handler{s}
 }
 
-func (h *Handler) HandleExample() error {
-	return nil
-}
-`, packageName, packageName),
+func (h *Handler) ExampleHandler(c echo.Context) error {
+	err := h.service.ExampleService(c.Request().Context())
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, "ok")
+}`, packageName, packageName),
 
 		"service.go": fmt.Sprintf(`package %s
 
+import "context"
+
 type ServiceInterface interface {
-	ServiceExample() string
+	ExampleService(context.Context) error
 }
 
 // Service for the %s package
 type Service struct {
-	RepositoryInterface RepositoryInterface
+	repo RepositoryInterface
 }
 
-func NewService(r RepositoryInterface) *Service {
-	return &Service{r}
+func NewService(repo RepositoryInterface) *Service {
+	return &Service{repo}
 }
 
-func (s *Service) ServiceExample() string {
-	return "Hello from the service!"
+func (s *Service) ExampleService(ctx context.Context) error {
+	return s.repo.ExampleRepository(ctx)
 }`, packageName, packageName),
 
 		"repository.go": fmt.Sprintf(`package %s
 
+import "context"
+
 type RepositoryInterface interface {
-	RepositoryExample() error
+	ExampleRepository(context.Context) error
 }
 
 // Repository for the %s package
-type Repository struct {}
+type Repository struct{}
 
 func NewRepository() *Repository {
 	return &Repository{}
 }
 
-func (r *Repository) RepositoryExample() error {
+func (r *Repository) ExampleRepository(ctx context.Context) error {
 	return nil
 }`, packageName, packageName),
 
